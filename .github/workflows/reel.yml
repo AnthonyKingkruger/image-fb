@@ -28,4 +28,4 @@ jobs:
       - name: Run script
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        run: python main.py
+        run: python reels.py
