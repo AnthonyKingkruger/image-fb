@@ -151,7 +151,7 @@ def save_reel():
 # GITHUB RAW URL
 # -------------------------
 def get_github_raw_url(file_path):
-    repo = os.getenv("GITHUB_REPOSITORY")
+    repo = "AnthonyKingkruger/image-fb"   # 🔥 fixed
     branch = "main"
     return f"https://raw.githubusercontent.com/{repo}/{branch}/{file_path}"
 
