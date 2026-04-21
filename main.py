@@ -1,51 +1,84 @@
 import requests
 import random
 import os
-import urllib.parse
+import json
 
+PEXELS_API_KEY = "53806321-9226909eff522ed078d33ee70"
 PAGE_ID = "116388161520753"
 ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
 
-def generate_prompt():
-    brands = ["Ferrari", "Lamborghini", "BMW", "Audi", "Mercedes"]
-    scenes = ["city night", "mountain road", "sunset highway", "rain street"]
+USED_FILE = "used_images.json"
 
-    return f"{brands} sports car driving on {scenes}, shot with Canon EOS R5, 85mm lens, f1.8, depth of field, motion blur, realistic lighting, cinematic color grading, ultra photorealistic, highly detailed, 8k, no CGI, no cartoon"
+# 🔹 Load used images
+def load_used():
+    if os.path.exists(USED_FILE):
+        with open(USED_FILE, "r") as f:
+            return json.load(f)
+    return []
 
-def generate_image(prompt):
-    encoded_prompt = urllib.parse.quote(prompt)
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024"
-    
-    img_data = requests.get(url).content
-    
-    with open("image.jpg", "wb") as f:
-        f.write(img_data)
-    
-    return "image.jpg"
+# 🔹 Save used images
+def save_used(data):
+    with open(USED_FILE, "w") as f:
+        json.dump(data, f)
 
-def upload_to_facebook(prompt, image_path):
+# 🔹 Get car image from Pexels
+def get_car_image():
+    url = "https://api.pexels.com/v1/search"
+    
+    queries = ["sports car", "luxury car", "supercar", "bmw car", "audi car"]
+    query = random.choice(queries)
+
+    headers = {
+        "Authorization": PEXELS_API_KEY
+    }
+
+    params = {
+        "query": query,
+        "per_page": 20
+    }
+
+    res = requests.get(url, headers=headers, params=params).json()
+
+    used = load_used()
+
+    for photo in res["photos"]:
+        img_url = photo["src"]["large"]
+
+        if img_url not in used:
+            used.append(img_url)
+            save_used(used)
+            return img_url
+
+    return None
+
+# 🔹 Upload to Facebook
+def upload_to_facebook(image_url, caption):
     url = f"https://graph.facebook.com/{PAGE_ID}/photos"
 
     data = {
-        "caption": f"{prompt} 🚗🔥\n\n#cars #supercars #luxurycars #carlover #automotive",
+        "url": image_url,
+        "caption": caption,
         "access_token": ACCESS_TOKEN
     }
 
-    with open(image_path, "rb") as f:
-        files = {"source": f}
-        res = requests.post(url, files=files, data=data)
+    res = requests.post(url, data=data)
 
     if res.status_code == 200:
-        print("Posted successfully ✅")
+        print("Posted ✅")
     else:
-        print("Error ❌:", res.text)
+        print("Error ❌", res.text)
 
+# 🔹 Main
 def main():
-    prompt = generate_prompt()
-    print("Prompt:", prompt)
-    
-    image = generate_image(prompt)
-    upload_to_facebook(prompt, image)
+    image_url = get_car_image()
+
+    if not image_url:
+        print("No new image found")
+        return
+
+    caption = "Luxury Car 🚗🔥\n\n#cars #supercars #luxurycars #carlover"
+
+    upload_to_facebook(image_url, caption)
 
 if __name__ == "__main__":
     main()
