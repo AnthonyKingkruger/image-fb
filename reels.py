@@ -1,34 +1,35 @@
 import requests, random, os, shutil, json
 
 PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
-USED_FILE = "used_videos.json"
 
 KEYWORDS = ["sports car", "luxury car", "supercar"]
+
+USED_FILE = "used_videos.json"
+MUSIC_FILE = "music_state.json"
 
 # -------------------------
 # JSON helpers
 # -------------------------
-def load_used():
-    if not os.path.exists(USED_FILE):
-        with open(USED_FILE, "w") as f:
-            json.dump([], f)
-        return []
+def load_json(file, default):
+    if not os.path.exists(file):
+        with open(file, "w") as f:
+            json.dump(default, f)
+        return default
 
     try:
-        with open(USED_FILE, "r") as f:
-            return json.load(f)
+        return json.load(open(file))
     except:
-        return []
+        return default
 
-def save_used(data):
-    with open(USED_FILE, "w") as f:
+def save_json(file, data):
+    with open(file, "w") as f:
         json.dump(data, f, indent=2)
 
 # -------------------------
-# Fetch video (anti-duplicate)
+# FETCH VIDEO (ANTI DUPLICATE)
 # -------------------------
 def fetch_video():
-    used = load_used()
+    used = load_json(USED_FILE, [])
 
     url = "https://api.pexels.com/videos/search"
 
@@ -54,7 +55,7 @@ def fetch_video():
             if len(used) > 200:
                 used = used[-100:]
 
-            save_used(used)
+            save_json(USED_FILE, used)
 
             return v["video_files"][0]["link"]
 
@@ -68,7 +69,7 @@ def get_video():
     return None
 
 # -------------------------
-# Download
+# DOWNLOAD VIDEO
 # -------------------------
 def download_video(url):
     video = requests.get(url).content
@@ -76,22 +77,51 @@ def download_video(url):
         f.write(video)
 
 # -------------------------
-# Remove audio
+# REMOVE AUDIO (FAST)
 # -------------------------
 def remove_audio():
     os.system("ffmpeg -y -i video.mp4 -an -c:v copy silent.mp4")
 
 # -------------------------
-# Music
+# BALANCED MUSIC SYSTEM 🔥
 # -------------------------
 def get_music():
     files = [f for f in os.listdir("music") if f.endswith(".mp3")]
-    return os.path.join("music", random.choice(files)) if files else None
 
+    if not files:
+        print("No music ❌")
+        return None
+
+    state = load_json(MUSIC_FILE, {"queue": [], "used": []})
+
+    if not state["queue"]:
+        state["queue"] = files.copy()
+        random.shuffle(state["queue"])
+        state["used"] = []
+
+    song = state["queue"].pop(0)
+    state["used"].append(song)
+
+    if not state["queue"]:
+        print("🔁 Music cycle reset")
+        state["queue"] = files.copy()
+        random.shuffle(state["queue"])
+        state["used"] = []
+
+    save_json(MUSIC_FILE, state)
+
+    return os.path.join("music", song)
+
+# -------------------------
+# ADD MUSIC LOOP (NO RESIZE)
+# -------------------------
 def add_music():
     music = get_music()
+
     if not music:
         return False
+
+    print("Using music:", music)
 
     os.system(f"""
     ffmpeg -y -i silent.mp4 -stream_loop -1 -i "{music}" \
@@ -101,16 +131,21 @@ def add_music():
     return True
 
 # -------------------------
-# Save reel (no overwrite)
+# SAVE REEL (NO OVERWRITE)
 # -------------------------
 def save_reel():
     os.makedirs("reels", exist_ok=True)
+
+    if not os.path.exists("final.mp4"):
+        print("❌ final.mp4 not found")
+        return
 
     i = 1
     while True:
         name = f"reels/reel_{i}.mp4"
         if not os.path.exists(name):
             shutil.move("final.mp4", name)
+            print(f"✅ Saved as {name}")
             break
         i += 1
 
@@ -118,7 +153,7 @@ def save_reel():
 # MAIN
 # -------------------------
 def main():
-    print("🚀 START")
+    print("🚀 START REEL")
 
     video = get_video()
     if not video:
@@ -132,7 +167,9 @@ def main():
         return
 
     save_reel()
-    print("✅ Reel saved")
 
+    print("🎬 DONE")
+
+# -------------------------
 if __name__ == "__main__":
     main()
