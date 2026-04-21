@@ -2,8 +2,8 @@ import requests
 import random
 
 # Facebook config
-PAGE_ID = "YOUR_PAGE_ID"
-ACCESS_TOKEN = "YOUR_FACEBOOK_ACCESS_TOKEN"
+PAGE_ID = "116388161520753"
+ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
 
 def generate_prompt():
     topics = ["beautiful beach sunset", "green village fields", "mountain landscape", "river nature view"]
