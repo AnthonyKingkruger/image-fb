@@ -173,31 +173,29 @@ def upload_to_facebook(video_path):
             return
 
         # -------------------------
-        # STEP 2: UPLOAD (🔥 FIXED)
+        # STEP 2: UPLOAD
         # -------------------------
-       # -------------------------
-# STEP 2: UPLOAD (FIXED)
-# -------------------------
-with open(video_path, "rb") as f:
-    file_size = os.path.getsize(video_path)
+        file_size = os.path.getsize(video_path)
 
-    upload_res = requests.post(
-        upload_url,
-        data=f,
-        headers={
-            "Authorization": f"OAuth {ACCESS_TOKEN}",
-            "offset": "0",
-            "file_size": str(file_size),
-            "Content-Type": "application/octet-stream"
-        }
-    )
+        with open(video_path, "rb") as f:
+            upload_res = requests.post(
+                upload_url,
+                data=f,
+                headers={
+                    "Authorization": f"OAuth {ACCESS_TOKEN}",
+                    "offset": "0",
+                    "file_size": str(file_size),
+                    "Content-Type": "application/octet-stream"
+                }
+            )
 
-print("🟡 UPLOAD STATUS:", upload_res.status_code)
-print("🟡 UPLOAD RESPONSE:", upload_res.text)
+        print("🟡 UPLOAD STATUS:", upload_res.status_code)
+        print("🟡 UPLOAD RESPONSE:", upload_res.text)
 
-if upload_res.status_code != 200:
-    print("❌ Upload failed")
-    return
+        if upload_res.status_code != 200:
+            print("❌ Upload failed")
+            return
+
         # -------------------------
         # STEP 3: FINISH
         # -------------------------
