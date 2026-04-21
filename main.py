@@ -37,7 +37,12 @@ def get_car_image():
         "per_page": 20
     }
 
-    res = requests.get(url, headers=headers, params=params).json()
+    res = requests.get(url, headers=headers, params=params)
+data = res.json()
+
+if "photos" not in data:
+    print("API Error:", data)
+    return None
 
     used = load_used()
 
