@@ -4,6 +4,16 @@ PEXELS_API_KEY ="oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
 
 KEYWORDS = ["sports car", "luxury car", "supercar"]
 
+# create folder
+os.makedirs("reels", exist_ok=True)
+
+# move file
+if os.path.exists("final.mp4"):
+    os.rename("final.mp4", "reels/reel.mp4")
+    print("Moved to reels folder ✅")
+else:
+    print("final.mp4 not found ❌")
+
 # -------------------------
 # 1. Fetch Video
 # -------------------------
