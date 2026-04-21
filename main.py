@@ -13,16 +13,13 @@ ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZ
 USED_FILE = "used_images.json"
 CAPTION_FILE = "used_captions.json"
 
-# ---------------------------
-# KEYWORDS
-# ---------------------------
 KEYWORDS = [
     "sports car","luxury car","supercar","bmw car",
     "audi car","mercedes car","ferrari car","lamborghini"
 ]
 
 # ---------------------------
-# JSON helpers
+# JSON SAFE HANDLER
 # ---------------------------
 def load_json(file):
     if not os.path.exists(file):
@@ -37,13 +34,24 @@ def load_json(file):
             if not content:
                 return []
 
-            return json.loads(content)
+            data = json.loads(content)
+
+            # 🔥 handle old format (ints)
+            if isinstance(data, list) and len(data) > 0 and isinstance(data[0], int):
+                print("⚠️ Old format detected, resetting")
+                return []
+
+            return data
 
     except:
-        print(f"⚠️ Corrupted JSON detected: {file} — resetting")
+        print(f"⚠️ Corrupted JSON fixed: {file}")
         with open(file, "w") as f:
             json.dump([], f)
         return []
+
+def save_json(file, data):
+    with open(file, "w") as f:
+        json.dump(data, f, indent=2)
 
 # ---------------------------
 # HASH
@@ -63,8 +71,11 @@ def fetch_pexels():
     }
     headers = {"Authorization": PEXELS_API_KEY}
 
-    data = requests.get(url, headers=headers, params=params).json()
-    return data.get("photos", [])
+    try:
+        data = requests.get(url, headers=headers, params=params).json()
+        return data.get("photos", [])
+    except:
+        return []
 
 # ---------------------------
 # FETCH UNSPLASH
@@ -77,8 +88,11 @@ def fetch_unsplash():
         "client_id": UNSPLASH_KEY
     }
 
-    data = requests.get(url, params=params).json()
-    return data if isinstance(data,list) else []
+    try:
+        data = requests.get(url, params=params).json()
+        return data if isinstance(data, list) else []
+    except:
+        return []
 
 # ---------------------------
 # GET IMAGE (ANTI DUPLICATE)
@@ -89,18 +103,15 @@ def get_image():
     for attempt in range(5):
         print("Attempt:", attempt+1)
 
-        photos = []
-        photos += fetch_pexels()
-        photos += fetch_unsplash()
-
+        photos = fetch_pexels() + fetch_unsplash()
         random.shuffle(photos)
 
         for p in photos:
             try:
-                if "src" in p:  # PEXELS
+                if "src" in p:
                     img_id = "pexels_" + str(p["id"])
                     img_url = p["src"]["large"]
-                else:  # UNSPLASH
+                else:
                     img_id = "unsplash_" + str(p["id"])
                     img_url = p["urls"]["regular"]
             except:
@@ -109,12 +120,13 @@ def get_image():
             hash_val = get_hash(img_url)
 
             already = any(
-                item["id"] == img_id or item["hash"] == hash_val
+                isinstance(item, dict) and
+                (item.get("id") == img_id or item.get("hash") == hash_val)
                 for item in used
             )
 
             if not already:
-                print("NEW IMAGE:", img_id)
+                print("✅ NEW IMAGE:", img_id)
 
                 used.append({
                     "id": img_id,
@@ -135,8 +147,11 @@ def get_image():
 # CAPTIONS
 # ---------------------------
 def get_caption():
+    if not os.path.exists("captions.txt"):
+        return "Dream Car 🚗🔥"
+
     with open("captions.txt") as f:
-        captions = [c.strip() for c in f.readlines()]
+        captions = [c.strip() for c in f.readlines() if c.strip()]
 
     used = load_json(CAPTION_FILE)
 
@@ -150,10 +165,12 @@ def get_caption():
     used.append(caption)
 
     save_json(CAPTION_FILE, used)
-
     return caption
 
 def get_hashtags():
+    if not os.path.exists("hashtags.txt"):
+        return "#cars #supercars #luxurycars"
+
     with open("hashtags.txt") as f:
         return random.choice(f.readlines()).strip()
 
@@ -173,12 +190,14 @@ def upload_to_facebook(image_url, caption):
         "access_token": ACCESS_TOKEN
     }
 
-    res = requests.post(url, data=data)
-
-    if res.status_code == 200:
-        print("Posted Successfully ✅")
-    else:
-        print("Facebook Error ❌:", res.text)
+    try:
+        res = requests.post(url, data=data)
+        if res.status_code == 200:
+            print("Posted Successfully ✅")
+        else:
+            print("Facebook Error ❌:", res.text)
+    except Exception as e:
+        print("Upload failed:", e)
 
 # ---------------------------
 # MAIN
