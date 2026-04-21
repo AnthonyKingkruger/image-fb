@@ -2,6 +2,7 @@ import requests
 import random
 import os
 import json
+import time
 
 PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
 PAGE_ID = "116388161520753"
