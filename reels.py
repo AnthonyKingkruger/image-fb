@@ -191,13 +191,11 @@ def main():
     reel_path = save_reel()
 
     # 🔥 Generate GitHub URL
-    raw_url = get_github_raw_url(reel_path)
-    print("🌐 Raw URL:", raw_url)
+    drive_url = "https://drive.google.com/uc?id=1-YNDg6gh4CScbypltO1C2MXAQJIgpbFY&export=download"
 
-    # 🔥 Upload to Facebook
-    upload_to_facebook_url(raw_url)
+print("🌐 Drive URL:", drive_url)
 
-    print("🎬 DONE")
+upload_to_facebook_url(drive_url)
 
 # -------------------------
 if __name__ == "__main__":
