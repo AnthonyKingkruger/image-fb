@@ -8,36 +8,109 @@ USED_FILE = "used_videos.json"
 MUSIC_FILE = "music_state.json"
 
 # -------------------------
-# RANDOM TEXT (TITLE + DESC)
+# JSON helpers
+# -------------------------
+def load_json(file, default):
+    if not os.path.exists(file):
+        with open(file, "w") as f:
+            json.dump(default, f)
+        return default
+    try:
+        return json.load(open(file))
+    except:
+        return default
+
+def save_json(file, data):
+    with open(file, "w") as f:
+        json.dump(data, f, indent=2)
+
+# -------------------------
+# RANDOM TEXT
 # -------------------------
 def get_random_line(file):
     if not os.path.exists(file):
         return ""
-
     with open(file, "r") as f:
         lines = [l.strip() for l in f.readlines() if l.strip()]
-
     return random.choice(lines) if lines else ""
 
 # -------------------------
-# FETCH VIDEO
+# 🔥 VIRAL VIDEO PICKER
 # -------------------------
-def fetch_video():
+def fetch_viral_video():
+    used = load_json(USED_FILE, [])
+
     url = "https://api.pexels.com/videos/search"
 
     params = {
-        "query": random.choice(["supercar", "luxury car", "sports car"]),
-        "per_page": 10
+        "query": random.choice([
+            "supercar driving cinematic",
+            "luxury car night drive",
+            "sports car highway",
+            "supercar city night"
+        ]),
+        "per_page": 15,
+        "page": random.randint(1, 20)
     }
 
     headers = {"Authorization": PEXELS_API_KEY}
     data = requests.get(url, headers=headers, params=params).json()
     videos = data.get("videos", [])
 
-    if not videos:
+    best_video = None
+    best_score = 0
+
+    for v in videos:
+        vid_id = str(v["id"])
+        if vid_id in used:
+            continue
+
+        text = str(v).lower()
+
+        # 🔥 STRICT CAR FILTER
+        if not any(k in text for k in ["car", "supercar", "vehicle", "automobile"]):
+            continue
+
+        score = 0
+
+        # HD filter
+        if v["width"] < 720:
+            continue
+
+        # orientation
+        if v["height"] > v["width"]:
+            score += 2
+
+        # duration
+        d = v["duration"]
+        if d < 5:
+            continue
+        elif d <= 15:
+            score += 3
+        elif d <= 25:
+            score += 1
+
+        # keywords boost
+        for k in ["supercar", "luxury", "night", "cinematic", "speed"]:
+            if k in text:
+                score += 2
+
+        if score > best_score:
+            best_score = score
+            best_video = v
+
+    if not best_video:
         return None
 
-    return videos[0]["video_files"][0]["link"]
+    used.append(str(best_video["id"]))
+    if len(used) > 200:
+        used = used[-100:]
+    save_json(USED_FILE, used)
+
+    # best quality file
+    best_file = max(best_video["video_files"], key=lambda x: x.get("width", 0))
+
+    return best_file["link"]
 
 # -------------------------
 # DOWNLOAD VIDEO
@@ -60,7 +133,6 @@ def get_music():
 def add_music():
     music = get_music()
     if not music:
-        print("❌ No music")
         return False
 
     print("🎵 Using:", music)
@@ -81,7 +153,6 @@ def add_music():
 # -------------------------
 def save_reel():
     os.makedirs("reels", exist_ok=True)
-
     i = 1
     while True:
         name = f"reels/reel_{i}.mp4"
@@ -91,19 +162,16 @@ def save_reel():
         i += 1
 
 # -------------------------
-# FB UPLOAD (WITH RETRY 🔥)
+# FB UPLOAD (RETRY)
 # -------------------------
 def upload_to_facebook(video_path):
     title = get_random_line("titles.txt")
     desc = get_random_line("descriptions.txt")
 
-    print("📝 Title:", title)
-    print("📝 Desc:", desc)
-
     url = f"https://graph-video.facebook.com/v19.0/{PAGE_ID}/videos"
 
-    for attempt in range(1, 4):
-        print(f"📤 Attempt {attempt}...")
+    for i in range(1, 4):
+        print(f"📤 Attempt {i}")
 
         try:
             with open(video_path, "rb") as f:
@@ -118,18 +186,18 @@ def upload_to_facebook(video_path):
                 )
 
             data = res.json()
-            print("📊 Response:", data)
+            print("📊", data)
 
             if "id" in data:
-                print("✅ Upload Success 🚀")
+                print("✅ SUCCESS")
                 return True
 
         except Exception as e:
-            print("⚠️ Error:", e)
+            print("⚠️", e)
 
         time.sleep(5)
 
-    print("❌ Failed after 3 attempts")
+    print("❌ FAILED")
     return False
 
 # -------------------------
@@ -138,7 +206,7 @@ def upload_to_facebook(video_path):
 def main():
     print("🚀 START")
 
-    video = fetch_video()
+    video = fetch_viral_video()
     if not video:
         print("No video ❌")
         return
