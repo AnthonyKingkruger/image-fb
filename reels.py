@@ -122,11 +122,11 @@ def add_music():
 
     os.system(f"""
     ffmpeg -y -i silent.mp4 -stream_loop -1 -i "{music}" \
-    -shortest -c:v copy -c:a aac final.mp4
+    -shortest -c:v libx264 -preset fast -pix_fmt yuv420p \
+    -c:a aac -b:a 128k final.mp4
     """)
 
     return True
-
 # -------------------------
 # SAVE REEL
 # -------------------------
@@ -173,15 +173,27 @@ def upload_to_facebook(video_path):
             return
 
         # -------------------------
-        # STEP 2: UPLOAD
+        # STEP 2: UPLOAD (🔥 FIXED)
         # -------------------------
         with open(video_path, "rb") as f:
-            upload_res = requests.post(upload_url, files={"file": f})
+            upload_res = requests.post(
+                upload_url,
+                data=f,   # ✅ binary upload
+                headers={
+                    "Authorization": f"OAuth {ACCESS_TOKEN}",
+                    "Content-Type": "application/octet-stream"
+                }
+            )
 
         print("🟡 UPLOAD STATUS:", upload_res.status_code)
+        print("🟡 UPLOAD RESPONSE:", upload_res.text)
+
+        if upload_res.status_code != 200:
+            print("❌ Upload failed")
+            return
 
         # -------------------------
-        # STEP 3: FINISH (PUBLISH)
+        # STEP 3: FINISH
         # -------------------------
         finish_res = requests.post(
             f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
@@ -195,17 +207,13 @@ def upload_to_facebook(video_path):
 
         print("🟢 FINISH RESPONSE:", finish_res)
 
-        # -------------------------
-        # CHECK RESULT
-        # -------------------------
         if "success" in finish_res or finish_res.get("id"):
             print("✅ Reel Published Successfully 🚀")
         else:
-            print("⚠️ Upload done but publish unclear")
+            print("⚠️ Upload ok but publish unclear")
 
     except Exception as e:
         print("❌ FB Upload Error:", str(e))
-
 # -------------------------
 # MAIN
 # -------------------------
