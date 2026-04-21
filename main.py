@@ -3,8 +3,8 @@ import random
 import os
 import urllib.parse
 
-PAGE_ID = os.getenv("PAGE_ID")
-ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
+PAGE_ID = "116388161520753"
+ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
 
 def generate_prompt():
     brands = ["Ferrari", "Lamborghini", "BMW", "Audi", "Mercedes"]
