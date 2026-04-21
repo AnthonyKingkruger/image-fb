@@ -200,7 +200,7 @@ def upload_to_facebook(video_path):
         # STEP 3: FINISH
         # -------------------------
         finish_res = requests.post(
-            f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
+            f"https://graph.facebook.com/v19.0/{PAGE_ID}/videos",
             data={
                 "upload_phase": "finish",
                 "video_id": video_id,
