@@ -1,6 +1,8 @@
 import requests, random, os, shutil, json
 
 PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
+PAGE_ID = "116388161520753"
+ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
 
 KEYWORDS = ["sports car", "luxury car", "supercar"]
 
@@ -77,19 +79,18 @@ def download_video(url):
         f.write(video)
 
 # -------------------------
-# REMOVE AUDIO (FAST)
+# REMOVE AUDIO
 # -------------------------
 def remove_audio():
     os.system("ffmpeg -y -i video.mp4 -an -c:v copy silent.mp4")
 
 # -------------------------
-# BALANCED MUSIC SYSTEM 🔥
+# BALANCED MUSIC SYSTEM
 # -------------------------
 def get_music():
     files = [f for f in os.listdir("music") if f.endswith(".mp3")]
 
     if not files:
-        print("No music ❌")
         return None
 
     state = load_json(MUSIC_FILE, {"queue": [], "used": []})
@@ -103,7 +104,6 @@ def get_music():
     state["used"].append(song)
 
     if not state["queue"]:
-        print("🔁 Music cycle reset")
         state["queue"] = files.copy()
         random.shuffle(state["queue"])
         state["used"] = []
@@ -113,15 +113,12 @@ def get_music():
     return os.path.join("music", song)
 
 # -------------------------
-# ADD MUSIC LOOP (NO RESIZE)
+# ADD MUSIC
 # -------------------------
 def add_music():
     music = get_music()
-
     if not music:
         return False
-
-    print("Using music:", music)
 
     os.system(f"""
     ffmpeg -y -i silent.mp4 -stream_loop -1 -i "{music}" \
@@ -131,29 +128,56 @@ def add_music():
     return True
 
 # -------------------------
-# SAVE REEL (NO OVERWRITE)
+# SAVE REEL
 # -------------------------
 def save_reel():
     os.makedirs("reels", exist_ok=True)
-
-    if not os.path.exists("final.mp4"):
-        print("❌ final.mp4 not found")
-        return
 
     i = 1
     while True:
         name = f"reels/reel_{i}.mp4"
         if not os.path.exists(name):
-            shutil.move("final.mp4", name)
-            print(f"✅ Saved as {name}")
-            break
+            shutil.copy("final.mp4", name)   # copy instead of move
+            return name
         i += 1
+
+# -------------------------
+# FACEBOOK UPLOAD
+# -------------------------
+def upload_to_facebook(video_path):
+    print("📤 Uploading to Facebook...")
+
+    start = requests.post(
+        f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
+        data={"upload_phase": "start", "access_token": ACCESS_TOKEN}
+    ).json()
+
+    upload_url = start.get("upload_url")
+    video_id = start.get("video_id")
+
+    if not upload_url:
+        print("❌ FB start failed:", start)
+        return
+
+    requests.post(upload_url, files={"file": open(video_path, "rb")})
+
+    requests.post(
+        f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
+        data={
+            "upload_phase": "finish",
+            "video_id": video_id,
+            "description": "🔥 Dream Car Reel #cars #reels #viral",
+            "access_token": ACCESS_TOKEN
+        }
+    )
+
+    print("✅ Uploaded to Facebook")
 
 # -------------------------
 # MAIN
 # -------------------------
 def main():
-    print("🚀 START REEL")
+    print("🚀 START")
 
     video = get_video()
     if not video:
@@ -166,10 +190,11 @@ def main():
     if not add_music():
         return
 
-    save_reel()
+    reel_path = save_reel()
+
+    upload_to_facebook(reel_path)
 
     print("🎬 DONE")
 
-# -------------------------
 if __name__ == "__main__":
     main()
