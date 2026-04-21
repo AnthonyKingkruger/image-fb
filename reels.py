@@ -156,7 +156,8 @@ def add_music():
     -c:a aac -b:a 128k -r 30 final.mp4
     """)
 
-    return True# -------------------------
+    return True
+# -------------------------
 # SAVE REEL
 # -------------------------
 def save_reel():
