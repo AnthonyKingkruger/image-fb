@@ -13,8 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
       - name: Build Docker Image
         run: docker build -t reel-bot .
@@ -22,9 +21,13 @@ jobs:
       - name: Run Container
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PAGE_ID: ${{ secrets.PAGE_ID }}
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           docker run \
             -e PEXELS_API_KEY=$PEXELS_API_KEY \
+            -e PAGE_ID=$PAGE_ID \
+            -e FACEBOOK_ACCESS_TOKEN=$FACEBOOK_ACCESS_TOKEN \
             -v ${{ github.workspace }}:/app \
             reel-bot
 
