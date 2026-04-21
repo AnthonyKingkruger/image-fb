@@ -10,7 +10,7 @@ def generate_prompt():
     brands = ["Ferrari", "Lamborghini", "BMW", "Audi", "Mercedes"]
     scenes = ["city night", "mountain road", "sunset highway", "rain street"]
 
-    return f"{brand} sports car driving on {scene}, shot with Canon EOS R5, 85mm lens, f1.8, depth of field, motion blur, realistic lighting, cinematic color grading, ultra photorealistic, highly detailed, 8k, no CGI, no cartoon"
+    return f"{brands} sports car driving on {scene}, shot with Canon EOS R5, 85mm lens, f1.8, depth of field, motion blur, realistic lighting, cinematic color grading, ultra photorealistic, highly detailed, 8k, no CGI, no cartoon"
 
 def generate_image(prompt):
     encoded_prompt = urllib.parse.quote(prompt)
