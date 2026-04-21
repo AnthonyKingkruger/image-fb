@@ -1,18 +1,8 @@
-import requests, random, os
+import requests, random, os, shutil
 
 PEXELS_API_KEY ="oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
 
 KEYWORDS = ["sports car", "luxury car", "supercar"]
-
-# create folder
-os.makedirs("reels", exist_ok=True)
-
-# move file
-if os.path.exists("final.mp4"):
-    os.rename("final.mp4", "reels/reel.mp4")
-    print("Moved to reels folder ✅")
-else:
-    print("final.mp4 not found ❌")
 
 # -------------------------
 # 1. Fetch Video
@@ -25,9 +15,7 @@ def fetch_video():
         "per_page": 5
     }
 
-    headers = {
-        "Authorization": PEXELS_API_KEY
-    }
+    headers = {"Authorization": PEXELS_API_KEY}
 
     data = requests.get(url, headers=headers, params=params).json()
     videos = data.get("videos", [])
@@ -76,7 +64,7 @@ def add_music():
     music = get_music()
 
     if not music:
-        return
+        return False
 
     print("Using music:", music)
 
@@ -85,6 +73,27 @@ def add_music():
     -shortest -vf "scale=1080:1920" \
     -c:v libx264 -c:a aac final.mp4
     """)
+
+    return True
+
+# -------------------------
+# 6. SAVE WITHOUT OVERWRITE 🔥
+# -------------------------
+def save_reel():
+    os.makedirs("reels", exist_ok=True)
+
+    if not os.path.exists("final.mp4"):
+        print("❌ final.mp4 not found")
+        return
+
+    i = 1
+    while True:
+        filename = f"reels/reel_{i}.mp4"
+        if not os.path.exists(filename):
+            shutil.move("final.mp4", filename)
+            print(f"✅ Saved as {filename}")
+            break
+        i += 1
 
 # -------------------------
 # MAIN
@@ -100,9 +109,13 @@ def main():
 
     download_video(video_url)
     remove_audio()
-    add_music()
+
+    if not add_music():
+        return
 
     print("✅ DONE → final.mp4")
+
+    save_reel()   # 🔥 IMPORTANT (end me)
 
 # -------------------------
 if __name__ == "__main__":
