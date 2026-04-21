@@ -1,12 +1,12 @@
-name: Auto Post
+name: Auto Car Post
 
 on:
   schedule:
-    - cron: '0 */3 * * *'   # har 3 ghante me 1 post
+    - cron: '0 */4 * * *'   # har 4 ghante
   workflow_dispatch:
 
 jobs:
-  run-script:
+  run:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,8 +18,12 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install deps
+      - name: Install dependencies
         run: pip install requests
 
       - name: Run script
+        env:
+          PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
+          PAGE_ID: ${{ secrets.PAGE_ID }}
+          FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: python main.py
