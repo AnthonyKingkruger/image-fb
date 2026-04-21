@@ -214,16 +214,13 @@ def main():
     reel_path = save_reel()
 
     # 🔥 Generate GitHub URL
-    raw_url = get_github_raw_url(reel_path)
-    print("🌐 Raw URL:", raw_url)
+raw_url = get_github_raw_url(reel_path)
+print("🌐 Raw URL:", raw_url)
 
-    # 🔥 Wait until file is available
-    if wait_for_github_file(raw_url):
-        upload_to_facebook_url(raw_url)
-    else:
-        print("❌ Skipping FB upload (file not ready)")
+# 🔥 Direct upload (no wait system)
+upload_to_facebook_url(raw_url)
 
-    print("🎬 DONE")
+print("🎬 DONE")
 
 if __name__ == "__main__":
     main()
