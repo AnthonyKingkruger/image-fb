@@ -1,6 +1,6 @@
 import requests, random, os, shutil
 
-PEXELS_API_KEY ="oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
+PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
 
 KEYWORDS = ["sports car", "luxury car", "supercar"]
 
@@ -34,10 +34,10 @@ def download_video(url):
         f.write(video)
 
 # -------------------------
-# 3. Remove Audio
+# 3. Remove Audio (FAST)
 # -------------------------
 def remove_audio():
-    os.system("ffmpeg -y -i video.mp4 -an silent.mp4")
+    os.system("ffmpeg -y -i video.mp4 -an -c:v copy silent.mp4")
 
 # -------------------------
 # 4. Get Random Music
@@ -58,7 +58,7 @@ def get_music():
     return os.path.join(folder, random.choice(files))
 
 # -------------------------
-# 5. Add Music Loop
+# 5. Add Music Loop (NO RESIZE 🔥)
 # -------------------------
 def add_music():
     music = get_music()
@@ -70,8 +70,7 @@ def add_music():
 
     os.system(f"""
     ffmpeg -y -i silent.mp4 -stream_loop -1 -i "{music}" \
-    -shortest -vf "scale=1080:1920" \
-    -c:v libx264 -c:a aac final.mp4
+    -shortest -c:v copy -c:a aac final.mp4
     """)
 
     return True
@@ -115,7 +114,7 @@ def main():
 
     print("✅ DONE → final.mp4")
 
-    save_reel()   # 🔥 IMPORTANT (end me)
+    save_reel()
 
 # -------------------------
 if __name__ == "__main__":
