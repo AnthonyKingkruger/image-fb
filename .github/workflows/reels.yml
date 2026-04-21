@@ -1,4 +1,4 @@
-name: Auto Reel Generator
+name: Auto Reel Generator (Docker)
 
 on:
   schedule:
@@ -16,27 +16,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
+      - name: Build Docker Image
+        run: docker build -t reel-bot .
 
-      - name: Install dependencies
-        run: |
-          pip install requests
-
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-
-      - name: Run script
+      - name: Run Container
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
-        run: python reels.py
+        run: |
+          docker run \
+            -e PEXELS_API_KEY=$PEXELS_API_KEY \
+            -v ${{ github.workspace }}:/app \
+            reel-bot
 
-      - name: Save reel to repo   # 👈 NEW STEP
+      - name: Commit reel
         run: |
           git config --global user.name "bot"
           git config --global user.email "bot@example.com"
-          git add .   # 👈 important
+          git add .
           git commit -m "new reel" || echo "no changes"
           git push
