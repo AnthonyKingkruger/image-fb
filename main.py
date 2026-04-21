@@ -1,16 +1,21 @@
 import requests
 import random
+import os
+import urllib.parse
 
-# Facebook config
-PAGE_ID = "116388161520753"
-ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
+PAGE_ID = os.getenv("PAGE_ID")
+ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 
 def generate_prompt():
-    topics = ["beautiful beach sunset", "green village fields", "mountain landscape", "river nature view"]
-    return random.choice(topics)
+    brands = ["Ferrari", "Lamborghini", "BMW", "Audi", "Mercedes"]
+    scenes = ["city night", "mountain road", "sunset highway", "rain street"]
+
+    return f"{random.choice(brands)} luxury car in {random.choice(scenes)}, ultra realistic, 4k"
 
 def generate_image(prompt):
-    url = f"https://image.pollinations.ai/prompt/{prompt}"
+    encoded_prompt = urllib.parse.quote(prompt)
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?width=1024&height=1024"
+    
     img_data = requests.get(url).content
     
     with open("image.jpg", "wb") as f:
@@ -20,18 +25,20 @@ def generate_image(prompt):
 
 def upload_to_facebook(prompt, image_path):
     url = f"https://graph.facebook.com/{PAGE_ID}/photos"
-    
-    files = {
-        "source": open(image_path, "rb")
-    }
-    
+
     data = {
-        "caption": f"{prompt} 🌍✨\n\n#nature #travel #beautiful",
+        "caption": f"{prompt} 🚗🔥\n\n#cars #supercars #luxurycars #carlover #automotive",
         "access_token": ACCESS_TOKEN
     }
 
-    res = requests.post(url, files=files, data=data)
-    print(res.text)
+    with open(image_path, "rb") as f:
+        files = {"source": f}
+        res = requests.post(url, files=files, data=data)
+
+    if res.status_code == 200:
+        print("Posted successfully ✅")
+    else:
+        print("Error ❌:", res.text)
 
 def main():
     prompt = generate_prompt()
