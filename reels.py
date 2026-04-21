@@ -151,32 +151,9 @@ def save_reel():
 # GITHUB RAW URL
 # -------------------------
 def get_github_raw_url(file_path):
-    repo = "AnthonyKingkruger/image-fb"   # 🔥 fixed
+    repo = "AnthonyKingkruger/image-fb"
     branch = "main"
     return f"https://raw.githubusercontent.com/{repo}/{branch}/{file_path}"
-
-# -------------------------
-# WAIT FOR FILE (🔥 FIX)
-# -------------------------
-def wait_for_github_file(url, retries=12, delay=5):
-    print("⏳ Waiting for GitHub file...")
-
-    for i in range(retries):
-        try:
-            res = requests.head(url)
-
-            if res.status_code == 200:
-                print("✅ File is live on GitHub")
-                return True
-            else:
-                print(f"⏱ Not ready yet ({i+1})...")
-        except:
-            print("⚠️ Error checking URL")
-
-        time.sleep(delay)
-
-    print("❌ File not available on GitHub")
-    return False
 
 # -------------------------
 # FACEBOOK UPLOAD (URL)
@@ -214,13 +191,14 @@ def main():
     reel_path = save_reel()
 
     # 🔥 Generate GitHub URL
-raw_url = get_github_raw_url(reel_path)
-print("🌐 Raw URL:", raw_url)
+    raw_url = get_github_raw_url(reel_path)
+    print("🌐 Raw URL:", raw_url)
 
-# 🔥 Direct upload (no wait system)
-upload_to_facebook_url(raw_url)
+    # 🔥 Upload to Facebook
+    upload_to_facebook_url(raw_url)
 
-print("🎬 DONE")
+    print("🎬 DONE")
 
+# -------------------------
 if __name__ == "__main__":
     main()
