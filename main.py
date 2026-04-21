@@ -29,10 +29,21 @@ def load_json(file):
         with open(file, "w") as f:
             json.dump([], f)
         return []
-    return json.load(open(file))
 
-def save_json(file, data):
-    json.dump(data, open(file,"w"))
+    try:
+        with open(file, "r") as f:
+            content = f.read().strip()
+
+            if not content:
+                return []
+
+            return json.loads(content)
+
+    except:
+        print(f"⚠️ Corrupted JSON detected: {file} — resetting")
+        with open(file, "w") as f:
+            json.dump([], f)
+        return []
 
 # ---------------------------
 # HASH
