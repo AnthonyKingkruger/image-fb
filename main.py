@@ -25,7 +25,7 @@ def save_used(data):
 def get_car_image():
     url = "https://api.pexels.com/v1/search"
     
-    queries = ["sports car", "luxury car", "supercar", "bmw car", "audi car"]
+    queries = ["sports car", "luxury car", "supercar"]
     query = random.choice(queries)
 
     headers = {
@@ -38,15 +38,15 @@ def get_car_image():
     }
 
     res = requests.get(url, headers=headers, params=params)
-data = res.json()
+    data = res.json()
 
-if "photos" not in data:
-    print("API Error:", data)
-    return None
+    if "photos" not in data:
+        print("Pexels API Error:", data)
+        return None
 
     used = load_used()
 
-    for photo in res["photos"]:
+    for photo in data["photos"]:
         img_url = photo["src"]["large"]
 
         if img_url not in used:
