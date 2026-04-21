@@ -152,9 +152,7 @@ def upload_to_facebook(video_path):
         return
 
     try:
-        # -------------------------
         # STEP 1: START
-        # -------------------------
         start_res = requests.post(
             f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
             data={
@@ -172,9 +170,7 @@ def upload_to_facebook(video_path):
             print("❌ START FAILED")
             return
 
-        # -------------------------
         # STEP 2: UPLOAD
-        # -------------------------
         file_size = os.path.getsize(video_path)
 
         with open(video_path, "rb") as f:
@@ -196,11 +192,9 @@ def upload_to_facebook(video_path):
             print("❌ Upload failed")
             return
 
-        # -------------------------
-        # STEP 3: FINISH
-        # -------------------------
+        # STEP 3: FINISH (FIXED)
         finish_res = requests.post(
-            f"https://graph.facebook.com/v19.0/{PAGE_ID}/videos",
+            f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
             data={
                 "upload_phase": "finish",
                 "video_id": video_id,
