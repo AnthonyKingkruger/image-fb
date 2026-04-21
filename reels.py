@@ -1,4 +1,4 @@
-import requests, random, os, shutil, json
+import requests, random, os, shutil, json, time
 
 PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
 PAGE_ID = "105592899263357"
