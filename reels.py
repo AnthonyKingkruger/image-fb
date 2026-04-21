@@ -190,13 +190,11 @@ def main():
 
     reel_path = save_reel()
 
-    # 🔥 Generate GitHub URL
+    # 🔥 DRIVE URL (yahan hona chahiye)
     drive_url = "https://drive.google.com/uc?id=1-YNDg6gh4CScbypltO1C2MXAQJIgpbFY&export=download"
 
-print("🌐 Drive URL:", drive_url)
+    print("🌐 Drive URL:", drive_url)
 
-upload_to_facebook_url(drive_url)
+    upload_to_facebook_url(drive_url)
 
-# -------------------------
-if __name__ == "__main__":
-    main()
+    print("🎬 DONE")
