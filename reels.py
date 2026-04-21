@@ -44,10 +44,26 @@ def fetch_viral_video():
 
     params = {
         "query": random.choice([
-            "supercar driving cinematic",
-            "luxury car night drive",
-            "sports car highway",
-            "supercar city night"
+            "BMW",
+    "Audi",
+    "Mercedes",
+    "Lamborghini",
+    "Ferrari",
+    "Porsche",
+    "Bugatti",
+    "McLaren",
+    "Rolls Royce",
+    "Bentley",
+    "Nissan",
+    "Tesla",
+    "Range Rover",
+    "Jaguar",
+    "Maserati",
+    "Aston Martin",
+    "Chevrolet",
+    "Ford Mustang",
+    "Dodge",
+    "Koenigsegg"
         ]),
         "per_page": 15,
         "page": random.randint(1, 20)
