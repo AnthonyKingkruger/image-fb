@@ -147,31 +147,64 @@ def save_reel():
 def upload_to_facebook(video_path):
     print("📤 Uploading to Facebook...")
 
-    start = requests.post(
-        f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
-        data={"upload_phase": "start", "access_token": ACCESS_TOKEN}
-    ).json()
-
-    upload_url = start.get("upload_url")
-    video_id = start.get("video_id")
-
-    if not upload_url:
-        print("❌ FB start failed:", start)
+    if not os.path.exists(video_path):
+        print("❌ Video file not found")
         return
 
-    requests.post(upload_url, files={"file": open(video_path, "rb")})
+    try:
+        # -------------------------
+        # STEP 1: START
+        # -------------------------
+        start_res = requests.post(
+            f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
+            data={
+                "upload_phase": "start",
+                "access_token": ACCESS_TOKEN
+            }
+        ).json()
 
-    requests.post(
-        f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
-        data={
-            "upload_phase": "finish",
-            "video_id": video_id,
-            "description": "🔥 Dream Car Reel #cars #reels #viral",
-            "access_token": ACCESS_TOKEN
-        }
-    )
+        print("🟡 START RESPONSE:", start_res)
 
-    print("✅ Uploaded to Facebook")
+        upload_url = start_res.get("upload_url")
+        video_id = start_res.get("video_id")
+
+        if not upload_url or not video_id:
+            print("❌ START FAILED")
+            return
+
+        # -------------------------
+        # STEP 2: UPLOAD
+        # -------------------------
+        with open(video_path, "rb") as f:
+            upload_res = requests.post(upload_url, files={"file": f})
+
+        print("🟡 UPLOAD STATUS:", upload_res.status_code)
+
+        # -------------------------
+        # STEP 3: FINISH (PUBLISH)
+        # -------------------------
+        finish_res = requests.post(
+            f"https://graph.facebook.com/v19.0/{PAGE_ID}/video_reels",
+            data={
+                "upload_phase": "finish",
+                "video_id": video_id,
+                "description": "🔥 Dream Car Reel #cars #reels #viral",
+                "access_token": ACCESS_TOKEN
+            }
+        ).json()
+
+        print("🟢 FINISH RESPONSE:", finish_res)
+
+        # -------------------------
+        # CHECK RESULT
+        # -------------------------
+        if "success" in finish_res or finish_res.get("id"):
+            print("✅ Reel Published Successfully 🚀")
+        else:
+            print("⚠️ Upload done but publish unclear")
+
+    except Exception as e:
+        print("❌ FB Upload Error:", str(e))
 
 # -------------------------
 # MAIN
