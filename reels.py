@@ -148,26 +148,22 @@ def save_reel():
         i += 1
 
 # -------------------------
-# GITHUB RAW URL
+# FACEBOOK DIRECT UPLOAD (🔥 GUARANTEED)
 # -------------------------
-def get_github_raw_url(file_path):
-    repo = "AnthonyKingkruger/image-fb"
-    branch = "main"
-    return f"https://raw.githubusercontent.com/{repo}/{branch}/{file_path}"
+def upload_to_facebook(video_path):
+    print("📤 Uploading DIRECT (no URL issues)...")
 
-# -------------------------
-# FACEBOOK UPLOAD (URL)
-# -------------------------
-def upload_to_facebook_url(video_url):
-    print("📤 Upload via URL...")
+    url = f"https://graph-video.facebook.com/v19.0/{PAGE_ID}/videos"
 
-    endpoint = f"https://graph-video.facebook.com/v18.0/{PAGE_ID}/videos"
-
-    res = requests.post(endpoint, data={
-        "access_token": ACCESS_TOKEN,
-        "file_url": video_url,
-        "description": "🔥 Dream Car Reel #cars #reels #viral"
-    })
+    with open(video_path, "rb") as f:
+        res = requests.post(
+            url,
+            files={"source": f},
+            data={
+                "access_token": ACCESS_TOKEN,
+                "description": "🔥 Dream Car Reel #cars #reels #viral"
+            }
+        )
 
     print("📊 FB RESPONSE:", res.json())
 
@@ -190,11 +186,11 @@ def main():
 
     reel_path = save_reel()
 
-    # 🔥 DRIVE URL (yahan hona chahiye)
-    drive_url = "https://drive.google.com/uc?id=1-YNDg6gh4CScbypltO1C2MXAQJIgpbFY&export=download"
-
-    print("🌐 Drive URL:", drive_url)
-
-    upload_to_facebook_url(drive_url)
+    # 🔥 FINAL UPLOAD (GUARANTEED)
+    upload_to_facebook(reel_path)
 
     print("🎬 DONE")
+
+# -------------------------
+if __name__ == "__main__":
+    main()
