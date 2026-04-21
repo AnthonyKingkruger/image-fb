@@ -120,14 +120,43 @@ def add_music():
     if not music:
         return False
 
+    # get video resolution
+    probe = os.popen(
+        'ffprobe -v error -select_streams v:0 -show_entries stream=width,height -of csv=p=0 video.mp4'
+    ).read().strip()
+
+    width, height = map(int, probe.split(','))
+
+    print(f"📐 Resolution: {width}x{height}")
+
+    # -------------------------
+    # CASE 1: VERTICAL VIDEO
+    # -------------------------
+    if height > width:
+        print("📱 Vertical → convert to 1080x1920")
+
+        vf = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920"
+
+    # -------------------------
+    # CASE 2: HORIZONTAL VIDEO
+    # -------------------------
+    else:
+        print("🖥 Horizontal → convert to 1920x1080")
+
+        vf = "scale=1920:1080:force_original_aspect_ratio=increase,crop=1920:1080"
+
+    # -------------------------
+    # FINAL FFMPEG
+    # -------------------------
     os.system(f"""
-    ffmpeg -y -i silent.mp4 -stream_loop -1 -i "{music}" \
-    -shortest -c:v libx264 -preset fast -pix_fmt yuv420p \
-    -c:a aac -b:a 128k final.mp4
+    ffmpeg -y -i video.mp4 -stream_loop -1 -i "{music}" \
+    -shortest \
+    -vf "{vf}" \
+    -c:v libx264 -preset fast -pix_fmt yuv420p \
+    -c:a aac -b:a 128k -r 30 final.mp4
     """)
 
-    return True
-# -------------------------
+    return True# -------------------------
 # SAVE REEL
 # -------------------------
 def save_reel():
