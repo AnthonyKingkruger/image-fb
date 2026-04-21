@@ -175,7 +175,7 @@ def upload_to_facebook(video_path):
         # -------------------------
         # STEP 2: UPLOAD (🔥 FIXED)
         # -------------------------
-        with open(video_path, "rb") as f:
+       with open(video_path, "rb") as f:
     file_size = os.path.getsize(video_path)
 
     upload_res = requests.post(
@@ -188,9 +188,6 @@ def upload_to_facebook(video_path):
             "Content-Type": "application/octet-stream"
         }
     )
-
-print("🟡 UPLOAD STATUS:", upload_res.status_code)
-print("🟡 UPLOAD RESPONSE:", upload_res.text)
         # -------------------------
         # STEP 3: FINISH
         # -------------------------
