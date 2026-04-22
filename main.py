@@ -14,8 +14,9 @@ USED_FILE = "used_images.json"
 CAPTION_FILE = "used_captions.json"
 
 KEYWORDS = [
-    "sports car","luxury car","supercar","bmw car",
-    "audi car","mercedes car","ferrari car","lamborghini"
+    "BMW","Audi","Mercedes","Lamborghini","Ferrari",
+    "Porsche","Bugatti","McLaren","Rolls Royce","Bentley",
+    "Nissan","Tesla","Range Rover","Jaguar","Maserati"
 ]
 
 # ---------------------------
