@@ -5,10 +5,10 @@ import json
 import time
 import hashlib
 
-UNSPLASH_KEY = "ggQlxeOt1owC5MtUHiuItv6eQAsZ4mAd5QKzq8QFfFw"
-PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
-PAGE_ID = "116388161520753"
-ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
+UNSPLASH_KEY = os.getenv("UNSPLASH_KEY")
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
+PAGE_ID = os.getenv("PAGE_ID")
+ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 
 USED_FILE = "used_images.json"
 CAPTION_FILE = "used_captions.json"
