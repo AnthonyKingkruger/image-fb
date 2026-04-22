@@ -1,5 +1,5 @@
 # =========================
-# 🔧 CONFIG (EDIT HERE)
+# 🔧 CONFIG
 # =========================
 
 SEARCH_KEYWORDS = [
@@ -7,34 +7,29 @@ SEARCH_KEYWORDS = [
     "Porsche","Bugatti","McLaren","Rolls Royce","Bentley",
     "Nissan","Tesla","Range Rover","Jaguar","Maserati"
 ]
-
-BOOST_KEYWORDS = ["supercar","luxury","night","cinematic","speed"]
-
 MIN_DURATION = 5
-MAX_DURATION = 20
-MIN_WIDTH = 720
-VERTICAL_ONLY = True
-
+MAX_DURATION = 60
 # =========================
 # IMPORTS
 # =========================
 import requests, random, os, shutil, json, time, hashlib, subprocess
 
 # =========================
-# ENV (SECURE)
+# ENV
 # =========================
 PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
 PAGE_ID = os.getenv("PAGE_ID")
 ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
 
 # =========================
-# STATE FILES
+# FILES
 # =========================
 USED_FILE = "used_videos.json"
 MUSIC_FILE = "music_state.json"
 HASH_FILE = "reel_hash.json"
 CAPTION_FILE = "caption_state.json"
 RUN_LOG = "run_log.json"
+KEYWORD_FILE = "keyword_state.json"
 
 # =========================
 # JSON HELPERS
@@ -82,26 +77,14 @@ def get_music():
     state["used"].append(music)
     save_json(MUSIC_FILE, state)
 
-    print("🎵 Using:", music)
     return os.path.join("music", music), music
 
 # =========================
-# CAPTION (NO REPEAT)
+# CAPTION
 # =========================
 def get_caption():
-    state = load_json(CAPTION_FILE, {"used": []})
-
     title = get_random_line("titles.txt")
     desc = get_random_line("descriptions.txt")
-
-    tries = 0
-    while title in state["used"] and tries < 10:
-        title = get_random_line("titles.txt")
-        tries += 1
-
-    state["used"].append(title)
-    save_json(CAPTION_FILE, state)
-
     return title, desc
 
 # =========================
@@ -112,59 +95,58 @@ def get_hash(path):
         return hashlib.md5(f.read()).hexdigest()
 
 # =========================
-# FETCH VIDEO
+# FETCH VIDEO (ROTATION + GUARANTEE)
 # =========================
 def fetch_video():
     used = load_json(USED_FILE, [])
+    state = load_json(KEYWORD_FILE, {"index": 0})
+
+    keyword = SEARCH_KEYWORDS[state["index"] % len(SEARCH_KEYWORDS)]
+    state["index"] += 1
+    save_json(KEYWORD_FILE, state)
+
+    print("🔍 Keyword:", keyword)
 
     url = "https://api.pexels.com/videos/search"
     headers = {"Authorization": PEXELS_API_KEY}
 
-    params = {
-        "query": random.choice(SEARCH_KEYWORDS),
-        "per_page": 15,
-        "page": random.randint(1, 20)
-    }
+    for page in range(1, 6):
+        params = {"query": keyword, "per_page": 30, "page": page}
+        data = requests.get(url, headers=headers, params=params).json()
+        videos = data.get("videos", [])
 
-    data = requests.get(url, headers=headers, params=params).json()
-    videos = data.get("videos", [])
+        for v in videos:
+    vid = str(v["id"])
+    if vid in used:
+        continue
 
-    best, best_score = None, 0
+    # ✅ ADD THIS HERE
+    if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
+        continue
 
-    for v in videos:
-        vid = str(v["id"])
-        if vid in used:
-            continue
+            used.append(vid)
+            save_json(USED_FILE, used[-200:])
 
-        text = str(v).lower()
+            file = max(v["video_files"], key=lambda x: x.get("width", 0))
 
-        if v["width"] < MIN_WIDTH:
-            continue
+            return {
+                "url": file["link"],
+                "id": vid,
+                "query": keyword
+            }
 
-        if VERTICAL_ONLY and v["height"] < v["width"]:
-            continue
+    # fallback
+    fallback = ["car","supercar","luxury car","sports car"]
+    fb = random.choice(fallback)
 
-        if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
-            continue
-
-        score = sum(2 for k in BOOST_KEYWORDS if k in text)
-
-        if score > best_score:
-            best_score = score
-            best = v
-
-    if not best:
-        return None
-
-    used.append(str(best["id"]))
-    save_json(USED_FILE, used[-200:])
-
-    file = max(best["video_files"], key=lambda x: x.get("width", 0))
+    data = requests.get(url, headers=headers, params={"query": fb, "per_page": 10}).json()
+    v = data["videos"][0]
+    file = max(v["video_files"], key=lambda x: x.get("width", 0))
 
     return {
         "url": file["link"],
-        "id": str(best["id"]),
-        "query": params["query"]
+        "id": str(v["id"]),
+        "query": fb
     }
 
 # =========================
@@ -176,7 +158,7 @@ def download(video):
         f.write(r.content)
 
 # =========================
-# ADD MUSIC (100% ATTACHED)
+# ADD MUSIC + AUTO UPSCALE
 # =========================
 def add_music():
     music_path, music_name = get_music()
@@ -188,13 +170,23 @@ def add_music():
         "-i","video.mp4",
         "-stream_loop","-1",
         "-i", music_path,
-        "-filter_complex",
-        "[0:v]scale=1080:1920,setsar=1[v];[1:a]volume=0.4[a]",
-        "-map","[v]","-map","[a]",
+
+        "-vf",
+        "scale='if(gt(iw,ih),1920,1080)':'if(gt(iw,ih),1080,1920)',setsar=1",
+
+        "-map","0:v:0",
+        "-map","1:a:0",
+
         "-shortest",
         "-r","30",
-        "-c:v","libx264","-preset","fast","-crf","23",
-        "-c:a","aac","-b:a","192k",
+
+        "-c:v","libx264",
+        "-preset","fast",
+        "-crf","23",
+
+        "-c:a","aac",
+        "-b:a","192k",
+
         "final.mp4"
     ]
 
@@ -202,7 +194,7 @@ def add_music():
     return True, music_name
 
 # =========================
-# SAVE REEL
+# SAVE REEL (NO DUPLICATE)
 # =========================
 def save_reel():
     os.makedirs("reels", exist_ok=True)
@@ -211,7 +203,7 @@ def save_reel():
     h = get_hash("final.mp4")
 
     if h in hashes:
-        print("⚠️ Duplicate reel skipped")
+        print("⚠️ Duplicate skipped")
         return None
 
     hashes.append(h)
@@ -254,7 +246,7 @@ def upload(video, title, desc):
     return False
 
 # =========================
-# LOG RUN
+# LOG
 # =========================
 def log_run(data):
     logs = load_json(RUN_LOG, [])
@@ -276,12 +268,9 @@ def main():
     print("🚀 START")
 
     video = fetch_video()
-    if not video:
-        return
-
     download(video)
 
-    ok, music_name = add_music()
+    ok, music = add_music()
     if not ok:
         return
 
@@ -294,10 +283,9 @@ def main():
 
     log_run({
         "time": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "video_id": video["id"],
-        "query": video["query"],
-        "music": music_name,
-        "title": title,
+        "video": video["id"],
+        "keyword": video["query"],
+        "music": music,
         "file": reel
     })
 
