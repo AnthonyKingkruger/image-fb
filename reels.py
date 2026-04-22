@@ -115,15 +115,16 @@ def fetch_video():
         data = requests.get(url, headers=headers, params=params).json()
         videos = data.get("videos", [])
 
-        for v in videos:
+  for v in videos:
     vid = str(v["id"])
+
     if vid in used:
         continue
 
-    # ✅ ADD THIS HERE
+    # duration filter
     if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
         continue
-
+        
             used.append(vid)
             save_json(USED_FILE, used[-200:])
 
