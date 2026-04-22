@@ -1,0 +1,13 @@
+# temp files
+video.mp4
+final.mp4
+
+# python cache
+__pycache__/
+*.pyc
+
+# system files
+.DS_Store
+
+# optional (agar heavy ho jaye)
+# reels/
