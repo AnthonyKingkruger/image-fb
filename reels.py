@@ -115,16 +115,17 @@ def fetch_video():
         data = requests.get(url, headers=headers, params=params).json()
         videos = data.get("videos", [])
 
-  for v in videos:
-    vid = str(v["id"])
+        # ✅ FIXED INDENTATION
+        for v in videos:
+            vid = str(v["id"])
 
-    if vid in used:
-        continue
+            if vid in used:
+                continue
 
-    # duration filter
-    if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
-        continue
-        
+            # ✅ duration filter
+            if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
+                continue
+
             used.append(vid)
             save_json(USED_FILE, used[-200:])
 
@@ -136,12 +137,17 @@ def fetch_video():
                 "query": keyword
             }
 
-    # fallback
-    fallback = ["car","supercar","luxury car","sports car"]
+    # 🔥 fallback (always return something)
+    fallback = ["car", "supercar", "luxury car", "sports car"]
     fb = random.choice(fallback)
 
     data = requests.get(url, headers=headers, params={"query": fb, "per_page": 10}).json()
-    v = data["videos"][0]
+    videos = data.get("videos", [])
+
+    if not videos:
+        return None
+
+    v = videos[0]
     file = max(v["video_files"], key=lambda x: x.get("width", 0))
 
     return {
