@@ -1,15 +1,44 @@
-import requests, random, os, shutil, json, time
+# =========================
+# 🔧 CONFIG (EDIT HERE)
+# =========================
 
-PEXELS_API_KEY = "oajVHU4u6uH2lLQPwlmof4vAe4kROKDBUMa183iGllxVQyDBx7Mf8w40"
-PAGE_ID = "116388161520753"
-ACCESS_TOKEN = "EAAOA47EFHGsBP9zVZCsr6OZASk8tbd8f8EVnmpfI3H9ZCvzdrHIXPc4qdHkk0VZBey0OZCbzytSspHA03qTh4vAFribHQjAdR41kIgqOEHsBxhH8Qkp50HDweRmHM7TLtmXeR9tAwdYKr4t67gyYYXdDULSXDhujoavpqgnEAmLs663CaZBfIcZCB4CjiED8LHRspkZD"
+SEARCH_KEYWORDS = [
+    "BMW","Audi","Mercedes","Lamborghini","Ferrari",
+    "Porsche","Bugatti","McLaren","Rolls Royce","Bentley",
+    "Nissan","Tesla","Range Rover","Jaguar","Maserati"
+]
 
+BOOST_KEYWORDS = ["supercar","luxury","night","cinematic","speed"]
+
+MIN_DURATION = 5
+MAX_DURATION = 20
+MIN_WIDTH = 720
+VERTICAL_ONLY = True
+
+# =========================
+# IMPORTS
+# =========================
+import requests, random, os, shutil, json, time, hashlib, subprocess
+
+# =========================
+# ENV (SECURE)
+# =========================
+PEXELS_API_KEY = os.getenv("PEXELS_API_KEY")
+PAGE_ID = os.getenv("PAGE_ID")
+ACCESS_TOKEN = os.getenv("FACEBOOK_ACCESS_TOKEN")
+
+# =========================
+# STATE FILES
+# =========================
 USED_FILE = "used_videos.json"
 MUSIC_FILE = "music_state.json"
+HASH_FILE = "reel_hash.json"
+CAPTION_FILE = "caption_state.json"
+RUN_LOG = "run_log.json"
 
-# -------------------------
-# JSON helpers
-# -------------------------
+# =========================
+# JSON HELPERS
+# =========================
 def load_json(file, default):
     if not os.path.exists(file):
         with open(file, "w") as f:
@@ -24,9 +53,9 @@ def save_json(file, data):
     with open(file, "w") as f:
         json.dump(data, f, indent=2)
 
-# -------------------------
+# =========================
 # RANDOM TEXT
-# -------------------------
+# =========================
 def get_random_line(file):
     if not os.path.exists(file):
         return ""
@@ -34,141 +63,160 @@ def get_random_line(file):
         lines = [l.strip() for l in f.readlines() if l.strip()]
     return random.choice(lines) if lines else ""
 
-# -------------------------
-# 🔥 VIRAL VIDEO PICKER
-# -------------------------
-def fetch_viral_video():
+# =========================
+# MUSIC (NO REPEAT)
+# =========================
+def get_music():
+    files = [f for f in os.listdir("music") if f.endswith(".mp3")]
+    if not files:
+        return None, None
+
+    state = load_json(MUSIC_FILE, {"used": []})
+    available = [f for f in files if f not in state["used"]]
+
+    if not available:
+        state["used"] = []
+        available = files
+
+    music = random.choice(available)
+    state["used"].append(music)
+    save_json(MUSIC_FILE, state)
+
+    print("🎵 Using:", music)
+    return os.path.join("music", music), music
+
+# =========================
+# CAPTION (NO REPEAT)
+# =========================
+def get_caption():
+    state = load_json(CAPTION_FILE, {"used": []})
+
+    title = get_random_line("titles.txt")
+    desc = get_random_line("descriptions.txt")
+
+    tries = 0
+    while title in state["used"] and tries < 10:
+        title = get_random_line("titles.txt")
+        tries += 1
+
+    state["used"].append(title)
+    save_json(CAPTION_FILE, state)
+
+    return title, desc
+
+# =========================
+# HASH
+# =========================
+def get_hash(path):
+    with open(path, "rb") as f:
+        return hashlib.md5(f.read()).hexdigest()
+
+# =========================
+# FETCH VIDEO
+# =========================
+def fetch_video():
     used = load_json(USED_FILE, [])
 
     url = "https://api.pexels.com/videos/search"
+    headers = {"Authorization": PEXELS_API_KEY}
 
     params = {
-        "query": random.choice([
-            "BMW",
-    "Audi",
-    "Mercedes",
-    "Lamborghini",
-    "Ferrari",
-    "Porsche",
-    "Bugatti",
-    "McLaren",
-    "Rolls Royce",
-    "Bentley",
-    "Nissan",
-    "Tesla",
-    "Range Rover",
-    "Jaguar",
-    "Maserati",
-    "Aston Martin",
-    "Chevrolet",
-    "Ford Mustang",
-    "Dodge",
-    "Koenigsegg"
-        ]),
+        "query": random.choice(SEARCH_KEYWORDS),
         "per_page": 15,
         "page": random.randint(1, 20)
     }
 
-    headers = {"Authorization": PEXELS_API_KEY}
     data = requests.get(url, headers=headers, params=params).json()
     videos = data.get("videos", [])
 
-    best_video = None
-    best_score = 0
+    best, best_score = None, 0
 
     for v in videos:
-        vid_id = str(v["id"])
-        if vid_id in used:
+        vid = str(v["id"])
+        if vid in used:
             continue
 
         text = str(v).lower()
 
-        # 🔥 STRICT CAR FILTER
-        if not any(k in text for k in ["car", "supercar", "vehicle", "automobile"]):
+        if v["width"] < MIN_WIDTH:
             continue
 
-        score = 0
-
-        # HD filter
-        if v["width"] < 720:
+        if VERTICAL_ONLY and v["height"] < v["width"]:
             continue
 
-        # orientation
-        if v["height"] > v["width"]:
-            score += 2
-
-        # duration
-        d = v["duration"]
-        if d < 5:
+        if v["duration"] < MIN_DURATION or v["duration"] > MAX_DURATION:
             continue
-        elif d <= 15:
-            score += 3
-        elif d <= 25:
-            score += 1
 
-        # keywords boost
-        for k in ["supercar", "luxury", "night", "cinematic", "speed"]:
-            if k in text:
-                score += 2
+        score = sum(2 for k in BOOST_KEYWORDS if k in text)
 
         if score > best_score:
             best_score = score
-            best_video = v
+            best = v
 
-    if not best_video:
+    if not best:
         return None
 
-    used.append(str(best_video["id"]))
-    if len(used) > 200:
-        used = used[-100:]
-    save_json(USED_FILE, used)
+    used.append(str(best["id"]))
+    save_json(USED_FILE, used[-200:])
 
-    # best quality file
-    best_file = max(best_video["video_files"], key=lambda x: x.get("width", 0))
+    file = max(best["video_files"], key=lambda x: x.get("width", 0))
 
-    return best_file["link"]
+    return {
+        "url": file["link"],
+        "id": str(best["id"]),
+        "query": params["query"]
+    }
 
-# -------------------------
-# DOWNLOAD VIDEO
-# -------------------------
-def download_video(url):
-    video = requests.get(url).content
+# =========================
+# DOWNLOAD
+# =========================
+def download(video):
+    r = requests.get(video["url"])
     with open("video.mp4", "wb") as f:
-        f.write(video)
+        f.write(r.content)
 
-# -------------------------
-# MUSIC SYSTEM
-# -------------------------
-def get_music():
-    files = [f for f in os.listdir("music") if f.endswith(".mp3")]
-    return os.path.join("music", random.choice(files)) if files else None
-
-# -------------------------
-# ADD MUSIC (FIXED)
-# -------------------------
+# =========================
+# ADD MUSIC (100% ATTACHED)
+# =========================
 def add_music():
-    music = get_music()
-    if not music:
-        return False
+    music_path, music_name = get_music()
+    if not music_path:
+        return False, None
 
-    print("🎵 Using:", music)
+    cmd = [
+        "ffmpeg","-y",
+        "-i","video.mp4",
+        "-stream_loop","-1",
+        "-i", music_path,
+        "-filter_complex",
+        "[0:v]scale=1080:1920,setsar=1[v];[1:a]volume=0.4[a]",
+        "-map","[v]","-map","[a]",
+        "-shortest",
+        "-r","30",
+        "-c:v","libx264","-preset","fast","-crf","23",
+        "-c:a","aac","-b:a","192k",
+        "final.mp4"
+    ]
 
-    os.system(f"""
-    ffmpeg -y -i video.mp4 -stream_loop -1 -i "{music}" \
-    -map 0:v:0 -map 1:a:0 \
-    -shortest \
-    -c:v libx264 -preset fast -pix_fmt yuv420p \
-    -c:a aac -b:a 192k \
-    final.mp4
-    """)
+    subprocess.run(cmd, check=True)
+    return True, music_name
 
-    return True
-
-# -------------------------
+# =========================
 # SAVE REEL
-# -------------------------
+# =========================
 def save_reel():
     os.makedirs("reels", exist_ok=True)
+
+    hashes = load_json(HASH_FILE, [])
+    h = get_hash("final.mp4")
+
+    if h in hashes:
+        print("⚠️ Duplicate reel skipped")
+        return None
+
+    hashes.append(h)
+    save_json(HASH_FILE, hashes[-200:])
+
     i = 1
     while True:
         name = f"reels/reel_{i}.mp4"
@@ -177,21 +225,16 @@ def save_reel():
             return name
         i += 1
 
-# -------------------------
-# FB UPLOAD (RETRY)
-# -------------------------
-def upload_to_facebook(video_path):
-    title = get_random_line("titles.txt")
-    desc = get_random_line("descriptions.txt")
-
+# =========================
+# UPLOAD
+# =========================
+def upload(video, title, desc):
     url = f"https://graph-video.facebook.com/v19.0/{PAGE_ID}/videos"
 
-    for i in range(1, 4):
-        print(f"📤 Attempt {i}")
-
+    for i in range(5):
         try:
-            with open(video_path, "rb") as f:
-                res = requests.post(
+            with open(video, "rb") as f:
+                r = requests.post(
                     url,
                     files={"source": f},
                     data={
@@ -200,44 +243,66 @@ def upload_to_facebook(video_path):
                         "description": desc
                     }
                 )
-
-            data = res.json()
-            print("📊", data)
-
-            if "id" in data:
-                print("✅ SUCCESS")
+            if "id" in r.json():
+                print("✅ Uploaded")
                 return True
+        except:
+            pass
 
-        except Exception as e:
-            print("⚠️", e)
+        time.sleep(2 ** i)
 
-        time.sleep(5)
-
-    print("❌ FAILED")
     return False
 
-# -------------------------
+# =========================
+# LOG RUN
+# =========================
+def log_run(data):
+    logs = load_json(RUN_LOG, [])
+    logs.append(data)
+    save_json(RUN_LOG, logs[-200:])
+
+# =========================
+# CLEANUP
+# =========================
+def cleanup():
+    for f in ["video.mp4","final.mp4"]:
+        if os.path.exists(f):
+            os.remove(f)
+
+# =========================
 # MAIN
-# -------------------------
+# =========================
 def main():
     print("🚀 START")
 
-    video = fetch_viral_video()
+    video = fetch_video()
     if not video:
-        print("No video ❌")
         return
 
-    download_video(video)
+    download(video)
 
-    if not add_music():
+    ok, music_name = add_music()
+    if not ok:
         return
 
-    reel_path = save_reel()
+    reel = save_reel()
+    if not reel:
+        return
 
-    upload_to_facebook(reel_path)
+    title, desc = get_caption()
+    upload(reel, title, desc)
 
+    log_run({
+        "time": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "video_id": video["id"],
+        "query": video["query"],
+        "music": music_name,
+        "title": title,
+        "file": reel
+    })
+
+    cleanup()
     print("🎬 DONE")
 
-# -------------------------
 if __name__ == "__main__":
     main()
