@@ -1,12 +1,9 @@
-name: Auto Reel Generator (Docker)
+name: Auto Reel Generator
 
 on:
   schedule:
     - cron: '0 */6 * * *'
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   run:
@@ -15,26 +12,29 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Build Docker Image
+      - name: Build Docker
         run: docker build -t reel-bot .
 
-      - name: Run Container
+      - name: Run Bot
         env:
           PEXELS_API_KEY: ${{ secrets.PEXELS_API_KEY }}
           PAGE_ID: ${{ secrets.PAGE_ID }}
           FACEBOOK_ACCESS_TOKEN: ${{ secrets.FACEBOOK_ACCESS_TOKEN }}
         run: |
           docker run \
-            -e PEXELS_API_KEY=$PEXELS_API_KEY \
-            -e PAGE_ID=$PAGE_ID \
-            -e FACEBOOK_ACCESS_TOKEN=$FACEBOOK_ACCESS_TOKEN \
+            -e PEXELS_API_KEY \
+            -e PAGE_ID \
+            -e FACEBOOK_ACCESS_TOKEN \
             -v ${{ github.workspace }}:/app \
             reel-bot
 
-      - name: Commit reel
+      - name: Commit State
         run: |
           git config --global user.name "bot"
           git config --global user.email "bot@example.com"
-          git add .
-          git commit -m "new reel" || echo "no changes"
+
+          git add reels/
+          git add *.json
+
+          git commit -m "auto state update" || echo "no changes"
           git push
